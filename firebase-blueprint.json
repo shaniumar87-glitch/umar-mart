@@ -1,0 +1,183 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Registered customer or system user profile with address book and preferences",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Unique user identity string" },
+        "name": { "type": "string", "maxLength": 100, "description": "Full name of the user" },
+        "email": { "type": "string", "format": "email", "description": "Primary contact email address" },
+        "role": { "type": "string", "enum": ["customer", "seller", "admin"], "description": "System access role" },
+        "phone": { "type": "string", "maxLength": 20, "description": "Pakistani phone number e.g. 0300-1234567" },
+        "address": { "type": "string", "maxLength": 300, "description": "Default shipping address" },
+        "city": { "type": "string", "maxLength": 50, "description": "City name" },
+        "vipTier": { "type": "string", "enum": ["Bronze", "Silver", "Gold", "Platinum VIP"], "description": "Loyalty tier" },
+        "rewardPoints": { "type": "number", "description": "Accrued reward points balance" },
+        "createdAt": { "type": "string", "description": "ISO timestamp when account was created" }
+      },
+      "required": ["uid", "name", "email", "role"]
+    },
+    "Product": {
+      "title": "Marketplace Product",
+      "description": "E-commerce product item listed on UmarMart",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Product SKU or unique ID" },
+        "name": { "type": "string", "maxLength": 200, "description": "Product display title" },
+        "price": { "type": "number", "description": "Current price in base currency PKR" },
+        "originalPrice": { "type": "number", "description": "Original MSRP before discount" },
+        "rating": { "type": "number", "description": "Average review score from 1.0 to 5.0" },
+        "reviewsCount": { "type": "number", "description": "Total user review count" },
+        "image": { "type": "string", "description": "Main product image URL" },
+        "category": { "type": "string", "description": "Product category slug" },
+        "seller": { "type": "string", "description": "Seller store name" },
+        "sellerId": { "type": "string", "description": "Seller UID" },
+        "stock": { "type": "number", "description": "Available inventory units" },
+        "description": { "type": "string", "maxLength": 2000, "description": "Detailed product specifications" },
+        "isFlashSale": { "type": "boolean", "description": "Whether item is in Flash Sale" },
+        "isFeatured": { "type": "boolean", "description": "Whether item is featured on homepage" }
+      },
+      "required": ["id", "name", "price", "category", "seller"]
+    },
+    "Order": {
+      "title": "Customer Order",
+      "description": "Completed purchase transaction with item breakdown and tracking status",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique order reference number e.g. ORD-8812" },
+        "userId": { "type": "string", "description": "Purchasing user UID" },
+        "customerName": { "type": "string", "description": "Recipient full name" },
+        "customerPhone": { "type": "string", "description": "Contact phone for delivery driver" },
+        "deliveryAddress": { "type": "string", "description": "Shipping destination address" },
+        "city": { "type": "string", "description": "Destination city" },
+        "totalAmount": { "type": "number", "description": "Final paid total including shipping & taxes" },
+        "paymentMethod": { "type": "string", "enum": ["cod", "easypaisa", "jazzcash", "card", "bank"], "description": "Payment channel used" },
+        "paymentStatus": { "type": "string", "enum": ["pending", "paid", "refunded"], "description": "Payment settlement status" },
+        "orderStatus": { "type": "string", "enum": ["processing", "shipped", "delivered", "cancelled"], "description": "Fulfillment lifecycle stage" },
+        "trackingNumber": { "type": "string", "description": "Courier tracking ID TCS / Leopard" },
+        "estimatedDelivery": { "type": "string", "description": "Human readable delivery window" },
+        "createdAt": { "type": "string", "description": "ISO timestamp when order was placed" }
+      },
+      "required": ["id", "userId", "customerName", "totalAmount", "paymentMethod", "orderStatus"]
+    },
+    "Seller": {
+      "title": "Marketplace Vendor",
+      "description": "Registered seller account profile and store metrics",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Seller profile ID" },
+        "userId": { "type": "string", "description": "Associated user UID" },
+        "storeName": { "type": "string", "maxLength": 100, "description": "Public store name" },
+        "ownerName": { "type": "string", "maxLength": 100, "description": "Vendor owner legal name" },
+        "cnic": { "type": "string", "description": "Pakistani CNIC e.g. 42101-1234567-1" },
+        "iban": { "type": "string", "description": "Bank IBAN e.g. PK36MEZN000201010123456" },
+        "plan": { "type": "string", "enum": ["free", "basic", "pro", "enterprise"], "description": "Seller subscription tier" },
+        "isVerified": { "type": "boolean", "description": "Verified seller blue badge status" },
+        "rating": { "type": "number", "description": "Seller store rating score" },
+        "totalSalesPKR": { "type": "number", "description": "Cumulative PKR revenue" }
+      },
+      "required": ["id", "storeName", "ownerName", "plan"]
+    },
+    "Notification": {
+      "title": "User Notification",
+      "description": "In-app alert notification for order updates or system news",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Notification ID" },
+        "userId": { "type": "string", "description": "Recipient UID" },
+        "title": { "type": "string", "maxLength": 100, "description": "Alert title" },
+        "message": { "type": "string", "maxLength": 300, "description": "Alert message body" },
+        "type": { "type": "string", "enum": ["order", "promo", "system", "reward"], "description": "Notification category" },
+        "isRead": { "type": "boolean", "description": "Read flag" },
+        "createdAt": { "type": "string", "description": "Timestamp ISO string" }
+      },
+      "required": ["id", "userId", "title", "message", "type"]
+    },
+    "Category": {
+      "title": "Product Category",
+      "description": "Marketplace category definition",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Category slug" },
+        "name": { "type": "string", "description": "Display name" },
+        "icon": { "type": "string", "description": "Lucide icon name string" },
+        "count": { "type": "number", "description": "Product item count" }
+      },
+      "required": ["id", "name"]
+    },
+    "Review": {
+      "title": "Product Review",
+      "description": "Customer feedback and rating entry",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Review ID" },
+        "productId": { "type": "string", "description": "Target product ID" },
+        "userName": { "type": "string", "description": "Author name" },
+        "rating": { "type": "number", "description": "Rating score 1-5" },
+        "comment": { "type": "string", "description": "Review text comment" },
+        "createdAt": { "type": "string", "description": "ISO timestamp" }
+      },
+      "required": ["id", "productId", "rating", "comment"]
+    },
+    "Wishlist": {
+      "title": "User Wishlist",
+      "description": "Saved favorite items for a customer",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "User UID" },
+        "productIds": { "type": "array", "items": { "type": "string" }, "description": "List of saved product IDs" }
+      },
+      "required": ["userId", "productIds"]
+    },
+    "Cart": {
+      "title": "User Shopping Cart",
+      "description": "Saved active cart items for a customer",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "User UID" },
+        "items": { "type": "array", "description": "Cart items with quantity and selected options" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp" }
+      },
+      "required": ["userId", "items"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Stores user profiles and customer preferences"
+    },
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Stores catalog product items listed across UmarMart"
+    },
+    "/categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Stores marketplace product categories"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Stores customer order transactions and courier status"
+    },
+    "/sellers/{sellerId}": {
+      "schema": "Seller",
+      "description": "Stores vendor profiles, subscription plans and bank details"
+    },
+    "/reviews/{reviewId}": {
+      "schema": "Review",
+      "description": "Stores user product reviews and ratings"
+    },
+    "/wishlist/{userId}": {
+      "schema": "Wishlist",
+      "description": "Stores user saved wishlist items"
+    },
+    "/cart/{userId}": {
+      "schema": "Cart",
+      "description": "Stores active shopping cart state per user"
+    },
+    "/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "Stores real-time alerts for customer order updates and promotions"
+    }
+  }
+}

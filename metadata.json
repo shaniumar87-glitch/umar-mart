@@ -1,0 +1,6 @@
+{
+  "name": "UmarMart",
+  "description": "A complete real-world Pakistani e-commerce marketplace featuring multi-role authentication, seller subscription tiers, AI fraud detection, live bidding auctions, digital downloads, multi-warehouse inventory, and multi-channel payments (EasyPaisa, JazzCash, COD, Cards).",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

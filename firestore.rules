@@ -1,0 +1,188 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =========================================================================
+    // HELPER FUNCTIONS & ACCESS CONTROL PRIMITIVES
+    // =========================================================================
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == "shaniumar87@gmail.com" ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
+    }
+
+    function isSeller() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/sellers/$(request.auth.uid)) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'seller')
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // =========================================================================
+    // DEFAULT CATCH-ALL DENY
+    // =========================================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // =========================================================================
+    // 1. USERS COLLECTION (Own Data Access + Admin Management)
+    // =========================================================================
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isSignedIn() && (isOwner(userId) || isAdmin());
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // =========================================================================
+    // 2. SHOPPING CART (User Own Data)
+    // =========================================================================
+    match /cart/{userId} {
+      allow read, write: if isOwner(userId) || isAdmin();
+    }
+
+    // =========================================================================
+    // 3. WISHLIST (User Own Data)
+    // =========================================================================
+    match /wishlist/{userId} {
+      allow read, write: if isOwner(userId) || isAdmin();
+    }
+
+    // =========================================================================
+    // 4. ORDERS COLLECTION (Customer Own Orders + Admin Global Management)
+    // =========================================================================
+    match /orders/{orderId} {
+      // Customers can read their own orders; Admins can read all orders
+      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      
+      // Authenticated users can create orders for themselves; Admins can create
+      allow create: if isSignedIn() && (request.resource.data.userId == request.auth.uid || isAdmin());
+      
+      // Only admins can update order status/dispatch; customers can update their own order
+      allow update: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      
+      // Only admins can delete order records
+      allow delete: if isAdmin();
+    }
+
+    // =========================================================================
+    // 5. PRODUCTS & INVENTORY (Public Browse + Admin & Restricted Seller Access)
+    // =========================================================================
+    match /products/{productId} {
+      // Publicly readable for all catalog browsing
+      allow read: if true;
+
+      // Create: Admins can create any product; Sellers can only create products tied to their own sellerId
+      allow create: if isAdmin() || (
+        isSignedIn() && 
+        request.resource.data.sellerId == request.auth.uid
+      );
+
+      // Update: Admins can manage all products; Sellers can only update their own inventory/products
+      allow update: if isAdmin() || (
+        isSignedIn() && 
+        resource.data.sellerId == request.auth.uid &&
+        request.resource.data.sellerId == request.auth.uid
+      );
+
+      // Delete: Admins can delete any product; Sellers can only delete their own products
+      allow delete: if isAdmin() || (
+        isSignedIn() && 
+        resource.data.sellerId == request.auth.uid
+      );
+    }
+
+    // =========================================================================
+    // 6. SELLERS & STORES (Public Profile + Owner & Admin Management)
+    // =========================================================================
+    match /sellers/{sellerId} {
+      // Publicly readable store profile and verification badge
+      allow read: if true;
+
+      // Create: Users can register their own storefront or Admin can provision
+      allow create: if isSignedIn() && (
+        request.resource.data.userId == request.auth.uid || 
+        sellerId == request.auth.uid || 
+        isAdmin()
+      );
+
+      // Update: Seller can update their own store details; Admins can verify/update all
+      allow update: if isAdmin() || (
+        isSignedIn() && (
+          resource.data.userId == request.auth.uid || 
+          sellerId == request.auth.uid
+        )
+      );
+
+      // Delete: Only admins can remove seller records
+      allow delete: if isAdmin();
+    }
+
+    // =========================================================================
+    // 7. CATEGORIES COLLECTION (Public Browse + Admin-Only Management)
+    // =========================================================================
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // =========================================================================
+    // 8. COUPONS & DISCOUNT VOUCHERS (Public Read + Admin-Only Management)
+    // =========================================================================
+    match /coupons/{couponId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // =========================================================================
+    // 9. REVIEWS & RATINGS (Public Browse + User Authorship & Admin Moderation)
+    // =========================================================================
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin() || (
+        isSignedIn() && 
+        (resource.data.userId == request.auth.uid || resource.data.userName == request.auth.token.name)
+      );
+    }
+
+    // =========================================================================
+    // 10. NOTIFICATIONS (User Own Alerts + Admin Management)
+    // =========================================================================
+    match /notifications/{notificationId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+    }
+
+    // =========================================================================
+    // 11. SYSTEM SETTINGS & ADMIN ROLES (Admin-Only)
+    // =========================================================================
+    match /system_settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /admins/{adminId} {
+      allow read, write: if isAdmin();
+    }
+  }
+}
