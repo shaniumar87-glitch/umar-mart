@@ -847,3 +847,7 @@ export default function App() {
     </ErrorBoundary>
   );
 }export default App;
+  );
+}
+
+export default App;
